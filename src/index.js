@@ -24,23 +24,22 @@ const vertex = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
 const fragment = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
 const program = createProgram(gl, vertex, fragment);
 
+const aPositionLocation = gl.getAttribLocation(program, 'aPosition');
+const uTranslation = gl.getUniformLocation(program, 'uTranslation');
+const uResolutionLocation = gl.getUniformLocation(program, 'uResolution');
+
 appLoop((t, dt) => {
-    console.log(t, dt);
     const buffer = createBuffer(gl, vertexArray);
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 1);
-
+    
     gl.clear(gl.COLOR_BUFFER_BIT);
-
-    const aPositionLocation = gl.getAttribLocation(program, 'aPosition');
-    const uTranslation = gl.getUniformLocation(program, 'uTranslation');
-    const uResolutionLocation = gl.getUniformLocation(program, 'uResolution');
-
+    
     gl.enableVertexAttribArray(aPositionLocation);
     gl.vertexAttribPointer(aPositionLocation, componentsNum, gl.FLOAT, false, 0, 0);
     gl.uniform2fv(uResolutionLocation, [canvas.width, canvas.height]);
     gl.uniform1i(uTranslation, t);
-
+    
     gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
 
 });
