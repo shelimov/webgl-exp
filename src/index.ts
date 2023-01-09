@@ -1,67 +1,61 @@
+import './global.css';
+
 import fragmentShaderSource from './shaders/main.fs';
 import vertexShaderSource from './shaders/main.vs';
 
 import {
   createProgram,
   createShader,
-  createBuffer,
+  createIndiciesBuffer,
+  createArrayBuffer,
+  // createVertexArrayBuffer,
 } from './utils';
 
-const canvas = document.createElement('canvas');
-document.body.appendChild(canvas);
-canvas.width = canvas.offsetWidth;
-canvas.height = canvas.offsetHeight;
+import { createCanvas } from './createCanvas';
+import { appLoop } from './appLoop';
 
 const vertexArray = [
   150, 150,
-  300, 300,
-  300, 150,
-  150, 150,
   150, 300,
+  300, 150,
   300, 300,
 ];
-const componentsNum = 2;
-const vertexCount = vertexArray.length / componentsNum;
 
-const gl = canvas.getContext('webgl')!;
-const vertex = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-const fragment = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-const program = createProgram(gl, vertex, fragment);
+const indicesArray = [
+  2, 1, 0, 3, 2, 1
+];
 
-const aPositionLocation = gl.getAttribLocation(program, 'aPosition');
-const uTranslation = gl.getUniformLocation(program, 'uTranslation');
-const uResolutionLocation = gl.getUniformLocation(program, 'uResolution');
+function main() {
+  const canvas = createCanvas();
+  document.body.appendChild(canvas);
 
-appLoop((timePassed) => {
-  const buffer = createBuffer(gl, vertexArray);
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0, 0, 0, 1);
+  const gl = canvas.getContext('webgl2')!;
 
-  gl.clear(gl.COLOR_BUFFER_BIT);
+  const vertex = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+  const fragment = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+  const program = createProgram(gl, vertex, fragment);
 
-  gl.enableVertexAttribArray(aPositionLocation);
-  gl.vertexAttribPointer(aPositionLocation, componentsNum, gl.FLOAT, false, 0, 0);
-  gl.uniform2fv(uResolutionLocation, [canvas.width, canvas.height]);
-  gl.uniform1i(uTranslation, timePassed);
+  const aVertexPosition = gl.getAttribLocation(program, 'aPosition');
+  const uTranslation = gl.getUniformLocation(program, 'uTranslation');
+  const uResolutionLocation = gl.getUniformLocation(program, 'uResolution');
 
-  gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
-});
+  appLoop((timePassed) => {
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    createArrayBuffer(gl, vertexArray);
+    createIndiciesBuffer(gl, indicesArray);
 
-function appLoop(fn: (timePassed: number, deltaTime: number) => void) {
-  const initTime = Date.now();
-  let time = Date.now();
-  let animationFrameId: number;
+    gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(aVertexPosition);
+    gl.uniform2fv(uResolutionLocation, [canvas.width, canvas.height]);
+    gl.uniform1i(uTranslation, timePassed);
 
-  const callFn = () => {
-      const now = Date.now();
-      const diff = now - time;
-      time = now;
-      fn(time - initTime, diff / 100);
-      animationFrameId = window.requestAnimationFrame(callFn);
-  }
+    gl.drawElements(gl.TRIANGLES, indicesArray.length, gl.UNSIGNED_SHORT, 0);
 
-  callFn();
-  return () => {
-    window.cancelAnimationFrame(animationFrameId);
-  };
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  });
 }
+
+main();
